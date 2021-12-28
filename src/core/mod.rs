@@ -1,3 +1,4 @@
+mod instrs;
 use std::{fs, io::Read};
 use simple_error::{SimpleError, simple_error};
 use byteorder::{ByteOrder, BigEndian};
@@ -5,7 +6,7 @@ use std::collections::VecDeque;
 use rand::random;
 use log::{debug, error, log_enabled, info, Level};
 
-use crate::instrs::*;
+use instrs::*;
 
 pub const PROGRAM_OFFSET: u16 = 0x200;
 pub struct Chip8Regs{
