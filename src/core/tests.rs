@@ -169,4 +169,210 @@ mod tests {
         let res: u8 = chip8.get_reg(reg_a).unwrap();
         assert_eq!(res, val);
     }
+
+    #[test]
+    fn test_math_or() {
+        let a_val: u8 = 0b10010010;
+        let b_val: u8 = 0b01101101;
+
+        let reg_a: u8 = 5;
+        let reg_b: u8 = 6;
+        let ans_val: u8 = a_val | b_val;
+        let mut chip8 = test_init();
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, b_val).unwrap();
+
+        let math_or_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::Or(Chip8DoubleRegOp { a: reg_a, b: reg_b }));
+        test_exec(&mut chip8, math_or_instr);
+
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        assert_eq!(res, ans_val);
+    }
+
+    #[test]
+    fn test_math_and() {
+        let a_val: u8 = 0b10010010;
+        let b_val: u8 = 0b01101101;
+
+        let reg_a: u8 = 5;
+        let reg_b: u8 = 6;
+        let ans_val: u8 = a_val & b_val;
+        let mut chip8 = test_init();
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, b_val).unwrap();
+
+        let math_and_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::And(Chip8DoubleRegOp { a: reg_a, b: reg_b }));
+        test_exec(&mut chip8, math_and_instr);
+
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        assert_eq!(res, ans_val);
+    }
+
+    #[test]
+    fn test_math_xor() {
+        let a_val: u8 = 0b10010011;
+        let b_val: u8 = 0b01101101;
+
+        let reg_a: u8 = 5;
+        let reg_b: u8 = 6;
+        let ans_val: u8 = a_val ^ b_val;
+        let mut chip8 = test_init();
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, b_val).unwrap();
+
+        let math_xor_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::Xor(Chip8DoubleRegOp { a: reg_a, b: reg_b }));
+        test_exec(&mut chip8, math_xor_instr);
+
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        assert_eq!(res, ans_val);
+    }
+
+    #[test]
+    fn test_math_incr() {
+        let a_val: u8 = 12;
+        let b_val: u8 = 52;
+        let c_val: u8 = 249;
+
+        let reg_a: u8 = 5;
+        let reg_b: u8 = 6;
+        let mut ans_val: u8 = a_val + b_val;
+        let mut chip8 = test_init();
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, b_val).unwrap();
+
+        let math_add_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::IncrBy(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
+        test_exec(&mut chip8, math_add_instr);
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        let flag: u8 = chip8.get_reg(0xF).unwrap();
+        assert_eq!(res, ans_val);
+        assert_eq!(flag, 0);
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, c_val).unwrap();
+
+        ans_val = a_val.wrapping_add(c_val);
+
+        let math_add_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::IncrBy(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
+        test_exec(&mut chip8, math_add_instr);
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        let flag: u8 = chip8.get_reg(0xF).unwrap();
+        assert_eq!(res, ans_val);
+        assert_eq!(flag, 1);
+    }
+
+    #[test]
+    fn test_math_decr() {
+        let a_val: u8 = 52;
+        let b_val: u8 = 12;
+        let c_val: u8 = 60;
+
+        let reg_a: u8 = 5;
+        let reg_b: u8 = 6;
+        let mut ans_val: u8 = a_val - b_val;
+        let mut chip8 = test_init();
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, b_val).unwrap();
+
+        let math_add_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::DecrBy(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
+        test_exec(&mut chip8, math_add_instr);
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        let flag: u8 = chip8.get_reg(0xF).unwrap();
+        assert_eq!(res, ans_val, "Failed 52 - 12");
+        assert_eq!(flag, 1);
+
+        chip8.set_reg(reg_a, a_val).unwrap();
+        chip8.set_reg(reg_b, c_val).unwrap();
+
+        ans_val = a_val.wrapping_sub(c_val);
+        info!("Ans {}", ans_val);
+
+        let math_add_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::DecrBy(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
+        test_exec(&mut chip8, math_add_instr);
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        let flag: u8 = chip8.get_reg(0xF).unwrap();
+        assert_eq!(res, ans_val, "Failed 52 - 60");
+        assert_eq!(flag, 0);
+    }
+
+    #[test]
+    fn test_math_inv_decr() {
+        let a_val: u8 = 52;
+        let b_val: u8 = 12;
+        let c_val: u8 = 60;
+
+        let reg_a: u8 = 5;
+        let reg_b: u8 = 6;
+        let mut ans_val: u8 = a_val - b_val;
+        let mut chip8 = test_init();
+
+        chip8.set_reg(reg_a, b_val).unwrap();
+        chip8.set_reg(reg_b, a_val).unwrap();
+
+        let math_add_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::InvDecrBy(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
+        test_exec(&mut chip8, math_add_instr);
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        let flag: u8 = chip8.get_reg(0xF).unwrap();
+        assert_eq!(res, ans_val, "Failed 52 - 12");
+        assert_eq!(flag, 1);
+
+        chip8.set_reg(reg_a, c_val).unwrap();
+        chip8.set_reg(reg_b, a_val).unwrap();
+
+        ans_val = a_val.wrapping_sub(c_val);
+        info!("Ans {}", ans_val);
+
+        let math_add_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::InvDecrBy(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
+        test_exec(&mut chip8, math_add_instr);
+        let res: u8 = chip8.get_reg(reg_a).unwrap();
+        let flag: u8 = chip8.get_reg(0xF).unwrap();
+        assert_eq!(res, ans_val, "Failed 52 - 60");
+        assert_eq!(flag, 0);
+    }
+
+    // TODO:
+    // #[test]
+    // fn test_math_right_shift() {
+    //     let a_val: u8 = 0b00010010;
+    //     let b_val: u8 = 0b00001111;
+    //     let reg_a: u8 = 5;
+    //     let reg_b: u8 = 6;
+    //     let mut ans_val: u8 = a_val >> 1;
+    //     let mut chip8 = test_init();
+
+    //     chip8.set_reg(reg_a, 0).unwrap();
+    //     chip8.set_reg(reg_b, a_val).unwrap();
+
+    // }
 }
