@@ -150,7 +150,11 @@ impl Chip8Instr {
         let opcode: u8 = ((instr & 0xF000) >> 12) as u8;
         let out_instr: Chip8Instr = match opcode {
             CHIP8_CLEAR_RET_FIRST_NIBBLE => {
-                Chip8Instr::Clear(Chip8NoArgsOp{})
+                match instr & 0xF {
+                    0 => Chip8Instr::Clear(Chip8NoArgsOp{}),
+                    0xE => Chip8Instr::Return(Chip8NoArgsOp{}),
+                    _ => return Err(simple_error!("Failed to generate instruction for {:?}", instr))
+                }
             }
             CHIP8_JUMP_FIRST_NIBBLE => {
                 Chip8Instr::Jump(Chip8LongImmOp::new(&instr))
@@ -162,7 +166,7 @@ impl Chip8Instr {
                 Chip8Instr::SkipImmNe(Chip8SingleRegImmOp::new(&instr))
             }
             CHIP8_IMM_EQ_FIRST_NIBBLE => {
-                Chip8Instr::SkipImmNe(Chip8SingleRegImmOp::new(&instr))
+                Chip8Instr::SkipImmEq(Chip8SingleRegImmOp::new(&instr))
             }
             CHIP8_REG_NE_FIRST_NIBBLE => {
                 Chip8Instr::SkipRegNe(Chip8DoubleRegOp::new(&instr))

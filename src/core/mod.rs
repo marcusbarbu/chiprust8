@@ -4,8 +4,7 @@ use simple_error::{SimpleError, simple_error};
 use byteorder::{ByteOrder, BigEndian};
 use std::collections::VecDeque;
 use rand::random;
-use log::{debug, error, log_enabled, info, Level};
-
+use log::{debug, error, info};
 use instrs::*;
 
 pub const PROGRAM_OFFSET: u16 = 0x200;
@@ -25,11 +24,11 @@ pub struct Chip8Mem {
 }
 
 pub struct Chip8RegularDisplay {
-    display: [[u8; 64]; 32],
+    _display: [[u8; 64]; 32],
 }
 
 pub struct Chip8SuperDisplay {
-    display: [[u8; 128]; 64],
+    _display: [[u8; 128]; 64],
 }
 
 pub enum Chip8DisplayData {
@@ -40,7 +39,7 @@ pub enum Chip8DisplayData {
 pub struct Chip8 {
     regs: Chip8Regs,
     timers: Chip8Timers,
-    disp: Chip8DisplayData,
+    _disp: Chip8DisplayData,
     mem: Chip8Mem,
     stack: VecDeque<u16>,
     keys: [u8; 16],
@@ -49,9 +48,10 @@ pub struct Chip8 {
 
 impl Chip8 {
     pub fn new(prog_path: &str, cosmac_compat: bool) -> Chip8 {
+        info!("Generating Chip8 Core from fname {}",prog_path);
         let mut mem: Chip8Mem = Chip8Mem{memspace: [0; 4096]};
         let timers: Chip8Timers = Chip8Timers{delay: 0, sound: 0};
-        let reg_disp: Chip8RegularDisplay = Chip8RegularDisplay{display: [[0;64]; 32]};
+        let reg_disp: Chip8RegularDisplay = Chip8RegularDisplay{_display: [[0;64]; 32]};
         let disp: Chip8DisplayData = Chip8DisplayData::Regular(reg_disp);
         let regs: Chip8Regs = Chip8Regs{ index_reg: 0, pc: 200, v_regs: [0;16]};
 
@@ -64,7 +64,7 @@ impl Chip8 {
 
         match infile.read_to_end(&mut prog_vec) {
             Ok(_) => {},
-            Err(_) => println!("Failed to read file in.")
+            Err(_) => error!("Failed to read file in.")
         };
 
         mem.memspace[200..].copy_from_slice(&prog_vec[..4096]);
@@ -72,7 +72,7 @@ impl Chip8 {
         Chip8 {
             regs: regs,
             timers: timers,
-            disp: disp,
+            _disp: disp,
             mem: mem,
             stack: VecDeque::new(),
             keys: [0; 16],
@@ -97,7 +97,7 @@ impl Chip8 {
         todo!()
     }
 
-    fn draw(&mut self, x_coord: u8, y_coord: u8, height: u8) -> Result<(), SimpleError> {
+    fn draw(&mut self, _x: u8, _y: u8, _height: u8) -> Result<(), SimpleError> {
         todo!()
     }
 
@@ -421,16 +421,17 @@ impl Chip8 {
 
     #[cfg(test)]
     fn test_core() -> Chip8 {
-        let mut mem: Chip8Mem = Chip8Mem{memspace: [0; 4096]};
+        info!("Generating test core");
+        let mem: Chip8Mem = Chip8Mem{memspace: [0; 4096]};
         let timers: Chip8Timers = Chip8Timers{delay: 0, sound: 0};
-        let reg_disp: Chip8RegularDisplay = Chip8RegularDisplay{display: [[0;64]; 32]};
+        let reg_disp: Chip8RegularDisplay = Chip8RegularDisplay{_display: [[0;64]; 32]};
         let disp: Chip8DisplayData = Chip8DisplayData::Regular(reg_disp);
         let regs: Chip8Regs = Chip8Regs{ index_reg: 0, pc: 200, v_regs: [0;16]};
 
         Chip8 {
             regs: regs,
             timers: timers,
-            disp: disp,
+            _disp: disp,
             mem: mem,
             stack: VecDeque::new(),
             keys: [0; 16],
@@ -455,7 +456,7 @@ mod tests {
         let instr: Chip8Instr = Chip8Instr::Jump(Chip8LongImmOp{ imm: 123 });
         match c.execute(instr) {
             Ok(_) => {}
-            Err(e) => {println!("failed with err {:?}", e)}
+            Err(e) => {error!("failed with err {:?}", e)}
         }
     }
 
