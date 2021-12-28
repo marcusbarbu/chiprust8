@@ -159,7 +159,11 @@ mod tests {
         let mut chip8 = test_init();
 
         chip8.set_reg(reg_b, val).unwrap();
-        let math_assign_instr: Chip8Instr = Chip8Instr::Math(Chip8MathInstr::Assign(Chip8DoubleRegOp { a: reg_a, b: reg_b}));
+        let math_assign_instr: Chip8Instr =
+            Chip8Instr::Math(Chip8MathInstr::Assign(Chip8DoubleRegOp {
+                a: reg_a,
+                b: reg_b,
+            }));
         test_exec(&mut chip8, math_assign_instr);
 
         let res: u8 = chip8.get_reg(reg_a).unwrap();
