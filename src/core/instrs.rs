@@ -1,3 +1,4 @@
+use log::debug;
 use simple_error::{simple_error, SimpleError};
 
 pub const CHIP8_CLEAR_RET_FIRST_NIBBLE: u8 = 0;
@@ -17,38 +18,38 @@ pub const CHIP8_SPRITE_OP_FIRST_NIBBLE: u8 = 0xD;
 pub const CHIP8_KEY_OP_FIRST_NIBBLE: u8 = 0xE;
 pub const CHIP8_EXTRA_OPS_FIRST_NIBBLE: u8 = 0xF;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Chip8NoArgsOp {}
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Chip8LongImmOp {
     pub imm: u16,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Chip8SingleRegOp {
     pub reg: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Chip8DoubleRegOp {
     pub a: u8,
     pub b: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Chip8SingleRegImmOp {
     pub reg: u8,
     pub imm: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Chip8DoubleRegImmOp {
     pub a: u8,
     pub b: u8,
     pub imm: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Chip8MathInstr {
     Assign(Chip8DoubleRegOp),
     Or(Chip8DoubleRegOp),
@@ -61,7 +62,7 @@ pub enum Chip8MathInstr {
     LeftShift(Chip8DoubleRegOp),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Chip8ExtraInstr {
     CheckDelay(Chip8SingleRegOp),
     WaitForKey(Chip8SingleRegOp),
@@ -74,13 +75,13 @@ pub enum Chip8ExtraInstr {
     LoadRegRange(Chip8SingleRegOp),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Chip8KeyConditionalInstr {
     KeyPressed(Chip8SingleRegOp),
     KeyNotPressed(Chip8SingleRegOp),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Chip8Instr {
     Clear(Chip8NoArgsOp),
     Return(Chip8NoArgsOp),
@@ -233,6 +234,7 @@ impl Chip8Instr {
                 return Err(simple_error!("Could not decode instr: {:?}", instr));
             }
         };
+        debug!("Instruction {:X} became {:?}", instr, out_instr);
         Ok(out_instr)
     }
 }
