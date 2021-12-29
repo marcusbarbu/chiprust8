@@ -7,8 +7,29 @@ use rand::random;
 use simple_error::{simple_error, SimpleError};
 use std::collections::VecDeque;
 use std::{fs, io::Read};
+use bitvec::prelude::*;
 
 pub const PROGRAM_OFFSET: u16 = 0x200;
+
+// credit to https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
+const DEFAULT_FONT_MEM: [u8; 80] = [
+0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+0x20, 0x60, 0x20, 0x20, 0x70, // 1
+0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+];
 pub struct Chip8Regs {
     index_reg: u16,
     pc: u16,
@@ -24,17 +45,8 @@ pub struct Chip8Mem {
     memspace: [u8; 4096],
 }
 
-pub struct Chip8RegularDisplay {
+pub struct Chip8DisplayData {
     _display: [[u8; 64]; 32],
-}
-
-pub struct Chip8SuperDisplay {
-    _display: [[u8; 128]; 64],
-}
-
-pub enum Chip8DisplayData {
-    FullSize(Chip8SuperDisplay),
-    Regular(Chip8RegularDisplay),
 }
 
 pub struct Chip8 {
@@ -53,11 +65,9 @@ impl Chip8 {
         let mut mem: Chip8Mem = Chip8Mem {
             memspace: [0; 4096],
         };
+        mem.memspace[0..80].copy_from_slice(&DEFAULT_FONT_MEM[..]);
         let timers: Chip8Timers = Chip8Timers { delay: 0, sound: 0 };
-        let reg_disp: Chip8RegularDisplay = Chip8RegularDisplay {
-            _display: [[0; 64]; 32],
-        };
-        let disp: Chip8DisplayData = Chip8DisplayData::Regular(reg_disp);
+        let disp: Chip8DisplayData = Chip8DisplayData{_display: [[0;64]; 32]};
         let regs: Chip8Regs = Chip8Regs {
             index_reg: 0,
             pc: 200,
@@ -102,11 +112,54 @@ impl Chip8 {
     }
 
     fn clear_display(&mut self) -> Result<(), SimpleError> {
-        todo!()
+        self._disp._display = [[0; 64]; 32];
+        Ok(())
     }
 
-    fn draw(&mut self, _x: u8, _y: u8, _height: u8) -> Result<(), SimpleError> {
-        todo!()
+    fn draw(&mut self, x: u8, y: u8, height: u8) -> Result<(), SimpleError> {
+        let x = (x % (self._disp._display[0].len() as u8)) as usize;
+        let y = (y % (self._disp._display.len() as u8)) as usize;
+
+        for row in 0 .. height {
+            let offset: usize = self.regs.index_reg as usize + row as usize;
+            let val: u8 = self.mem.memspace[offset];
+            let hots: BitVec::<Msb0, u8> = BitVec::<Msb0, u8>::from_element(val);
+            debug!("BV: {:?} val: {:X} offset: {}", row, val, offset);
+            for (col_offset, b) in hots.into_iter().enumerate() {
+                let col_val: usize = x + col_offset;
+                let row_val: usize = y + (row as usize);
+                if row_val < self._disp._display.len() {
+                    let active_row = &mut self._disp._display[row_val];
+                    if col_val < active_row.len(){
+                        match b {
+                            true => {
+                                // debug!("Row val: {} col_val {} hot", row_val, col_val );
+                                active_row[col_val] ^= 1;
+                            }
+                            false => {
+                                // debug!("Row val: {} col_val {} not hot", row_val, col_val );
+                                // active_row[col_val] = 0;
+                            }
+                        } 
+                    }
+                    
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn dbg_display(&self) {
+        for r in self._disp._display.into_iter() {
+            let mut row_str: String = String::new();
+            for c in r.into_iter() {
+                match c {
+                    0 => row_str.push(' '),
+                    _ => row_str.push('■')
+                }
+            }
+            println!("{}",row_str);
+        }
     }
 
     fn pop(&mut self) -> Result<u16, SimpleError> {
@@ -378,8 +431,22 @@ impl Chip8 {
                     }
                     Ok(())
                 }
-                Chip8ExtraInstr::SetIndexHex(_) => todo!(),
-                Chip8ExtraInstr::BcdReg(_) => todo!(),
+                Chip8ExtraInstr::SetIndexHex(args) => {
+                    let val: u8 = self.get_reg(args.reg)?;
+                    self.regs.index_reg = (val * 5) as u16;
+                    Ok(())
+                }
+                Chip8ExtraInstr::BcdReg(args) => {
+                    let val: u8 = self.get_reg(args.reg)?;
+                    let origin: usize = self.regs.index_reg as usize;
+                    let hunds = val / 100;
+                    let tens: u8 = (val - hunds) / 10;
+                    let ones: u8 = val - (hunds + tens);
+                    self.mem.memspace[origin] = hunds;
+                    self.mem.memspace[origin+1] = tens;
+                    self.mem.memspace[origin+2] = ones;
+                    Ok(())
+                }
                 Chip8ExtraInstr::SaveRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
                     let end: u8 = self.get_reg(args.reg)?;
@@ -407,14 +474,12 @@ impl Chip8 {
     #[cfg(test)]
     fn test_core() -> Chip8 {
         info!("Generating test core");
-        let mem: Chip8Mem = Chip8Mem {
+        let mut mem: Chip8Mem = Chip8Mem {
             memspace: [0; 4096],
         };
+        mem.memspace[0..80].copy_from_slice(&DEFAULT_FONT_MEM[..]);
         let timers: Chip8Timers = Chip8Timers { delay: 0, sound: 0 };
-        let reg_disp: Chip8RegularDisplay = Chip8RegularDisplay {
-            _display: [[0; 64]; 32],
-        };
-        let disp: Chip8DisplayData = Chip8DisplayData::Regular(reg_disp);
+        let disp: Chip8DisplayData = Chip8DisplayData{_display: [[0;64]; 32]};
         let regs: Chip8Regs = Chip8Regs {
             index_reg: 0,
             pc: 200,

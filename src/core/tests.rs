@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+
     use crate::core::*;
     fn test_init() -> Chip8 {
         let _ = env_logger::builder()
@@ -375,4 +376,29 @@ mod tests {
     //     chip8.set_reg(reg_b, a_val).unwrap();
 
     // }
+
+
+    #[test]
+    fn test_draw_0() {
+        let reg_a: u8 = 0;
+        let reg_b: u8 = 1;
+        let mut x: u8; 
+        let mut y: u8; 
+        let height: u8 = 5;
+        let mut chip8 = test_init();
+
+        for i in 0..0x10 {
+            debug!("{}",i);
+            x = 5 * i;
+            y = 6 * (i / 13);
+            chip8.set_reg(reg_a, x).unwrap();
+            chip8.set_reg(reg_b, y).unwrap();
+            chip8.regs.index_reg = (i * height) as u16;
+            debug!("Trying index {}", i);
+            let draw_instr: Chip8Instr = Chip8Instr::Draw(Chip8DoubleRegImmOp{ a: reg_a, b: reg_b, imm: height });
+            test_exec(&mut chip8, draw_instr);
+            chip8.dbg_display();
+            // chip8.clear_display().unwrap();
+        }
+    }
 }
