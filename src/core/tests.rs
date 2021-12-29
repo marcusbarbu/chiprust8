@@ -379,7 +379,7 @@ mod tests {
 
 
     #[test]
-    fn test_draw_0() {
+    fn test_draw() {
         let reg_a: u8 = 0;
         let reg_b: u8 = 1;
         let mut x: u8; 
@@ -387,18 +387,19 @@ mod tests {
         let height: u8 = 5;
         let mut chip8 = test_init();
 
-        for i in 0..0x10 {
-            debug!("{}",i);
-            x = 5 * i;
-            y = 6 * (i / 13);
-            chip8.set_reg(reg_a, x).unwrap();
-            chip8.set_reg(reg_b, y).unwrap();
-            chip8.regs.index_reg = (i * height) as u16;
-            debug!("Trying index {}", i);
-            let draw_instr: Chip8Instr = Chip8Instr::Draw(Chip8DoubleRegImmOp{ a: reg_a, b: reg_b, imm: height });
-            test_exec(&mut chip8, draw_instr);
-            chip8.dbg_display();
-            // chip8.clear_display().unwrap();
+        for _ in 0 .. 2 {
+            for i in 0..0x10 {
+                debug!("{}",i);
+                x = 5 * i;
+                y = 6 * (i / 13);
+                chip8.set_reg(reg_a, x).unwrap();
+                chip8.set_reg(reg_b, y).unwrap();
+                chip8.regs.index_reg = (i * height) as u16;
+                debug!("Trying index {}", i);
+                let draw_instr: Chip8Instr = Chip8Instr::Draw(Chip8DoubleRegImmOp{ a: reg_a, b: reg_b, imm: height });
+                test_exec(&mut chip8, draw_instr);
+                chip8.dbg_display();
+            }
         }
     }
 }

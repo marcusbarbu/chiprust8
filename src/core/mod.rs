@@ -120,6 +120,7 @@ impl Chip8 {
         let x = (x % (self._disp._display[0].len() as u8)) as usize;
         let y = (y % (self._disp._display.len() as u8)) as usize;
 
+        let mut collision: bool = false;
         for row in 0 .. height {
             let offset: usize = self.regs.index_reg as usize + row as usize;
             let val: u8 = self.mem.memspace[offset];
@@ -131,21 +132,24 @@ impl Chip8 {
                 if row_val < self._disp._display.len() {
                     let active_row = &mut self._disp._display[row_val];
                     if col_val < active_row.len(){
-                        match b {
-                            true => {
-                                // debug!("Row val: {} col_val {} hot", row_val, col_val );
-                                active_row[col_val] ^= 1;
-                            }
-                            false => {
-                                // debug!("Row val: {} col_val {} not hot", row_val, col_val );
-                                // active_row[col_val] = 0;
-                            }
-                        } 
+                        if active_row[col_val] == 1 {
+                            collision = true;
+                        }
+                        if b {
+                            active_row[col_val] ^= 1;
+                        }
                     }
                     
                 }
             }
         }
+        if collision {
+            self.set_reg(0xF, 1)?;
+        }
+        else {
+            self.set_reg(0xF, 0)?;
+        }
+
         Ok(())
     }
 
