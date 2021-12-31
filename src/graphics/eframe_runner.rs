@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{graphics::graphics_adapter::GraphicsAdapter, core::Chip8DisplayData};
+use crate::{core::Chip8DisplayData, graphics::graphics_adapter::GraphicsAdapter};
 use eframe::{egui, epi};
 use log::error;
 
@@ -15,17 +15,24 @@ impl Chip8EframeApp {
     pub fn new(adapter: GraphicsAdapter) -> Chip8EframeApp {
         println!("Generating eframe app!");
         Chip8EframeApp {
-            fname: String::from(""), 
+            fname: String::from(""),
             display_data: Chip8DisplayData::default(),
             frame: None,
-            adapter: adapter
+            adapter: adapter,
         }
     }
 
     fn check_for_updates(&mut self) -> bool {
-        match self.adapter.display_state_receiver.recv_timeout(std::time::Duration::from_micros(1)) {
-            Ok(v) => {self.display_data = v; true}
-            Err(_) => {false}
+        match self
+            .adapter
+            .display_state_receiver
+            .recv_timeout(std::time::Duration::from_micros(1))
+        {
+            Ok(v) => {
+                self.display_data = v;
+                true
+            }
+            Err(_) => false,
         }
     }
 }
@@ -35,15 +42,14 @@ impl epi::App for Chip8EframeApp {
         println!("update!");
         if self.check_for_updates() {
             println!("NEW DATA!");
-        }
-        else {
+        } else {
             println!("No data");
         }
-        egui::CentralPanel::default().show(ctx, |ui|{
+        egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Hello world!");
                 ui.label(self.fname.as_str());
-                ui.label(format!("{}",self.display_data));
+                ui.label(format!("{}", self.display_data));
             })
         });
     }
@@ -52,16 +58,19 @@ impl epi::App for Chip8EframeApp {
         "Chip8 eFrame-based Graphics"
     }
 
-    fn setup(&mut self, _ctx: &egui::CtxRef, _frame: &epi::Frame, _storage: Option<&dyn epi::Storage>) {
+    fn setup(
+        &mut self,
+        _ctx: &egui::CtxRef,
+        _frame: &epi::Frame,
+        _storage: Option<&dyn epi::Storage>,
+    ) {
         println!("Setting up!");
         self.frame = Some(_frame.clone());
         let bf: Box<epi::Frame> = Box::new(_frame.clone());
-        std::thread::spawn(move || {
-            loop {
-                bf.request_repaint();
-                println!("From that thread");
-                std::thread::sleep(std::time::Duration::from_millis(10));
-            }
+        std::thread::spawn(move || loop {
+            bf.request_repaint();
+            println!("From that thread");
+            std::thread::sleep(std::time::Duration::from_millis(10));
         });
     }
 }

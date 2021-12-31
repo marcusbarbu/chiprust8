@@ -1,5 +1,6 @@
 mod instrs;
 mod tests;
+use bitvec::prelude::*;
 use byteorder::{BigEndian, ByteOrder};
 use instrs::*;
 use log::{debug, error, info};
@@ -8,7 +9,6 @@ use simple_error::{simple_error, SimpleError};
 use std::collections::VecDeque;
 use std::fmt::Display;
 use std::{fs, io::Read};
-use bitvec::prelude::*;
 
 use crate::graphics::graphics_adapter::GraphicsAdapter;
 
@@ -16,22 +16,22 @@ pub const PROGRAM_OFFSET: u16 = 0x200;
 
 // credit to https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
 const DEFAULT_FONT_MEM: [u8; 80] = [
-0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-0x20, 0x60, 0x20, 0x20, 0x70, // 1
-0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 pub struct Chip8Regs {
     index_reg: u16,
@@ -55,7 +55,9 @@ pub struct Chip8DisplayData {
 
 impl Default for Chip8DisplayData {
     fn default() -> Self {
-        Self { _display: [[0; 64]; 32] }
+        Self {
+            _display: [[0; 64]; 32],
+        }
     }
 }
 
@@ -66,10 +68,10 @@ impl Display for Chip8DisplayData {
             for c in r.into_iter() {
                 match c {
                     0 => row_str.push(' '),
-                    _ => row_str.push('■')
+                    _ => row_str.push('■'),
                 }
             }
-            write!(f,"{}\n",row_str)?;
+            write!(f, "{}\n", row_str)?;
         }
         Ok(())
     }
@@ -94,7 +96,9 @@ impl Chip8Core {
         };
         mem.memspace[0..80].copy_from_slice(&DEFAULT_FONT_MEM[..]);
         let timers: Chip8Timers = Chip8Timers { delay: 0, sound: 0 };
-        let disp: Chip8DisplayData = Chip8DisplayData{_display: [[0;64]; 32]};
+        let disp: Chip8DisplayData = Chip8DisplayData {
+            _display: [[0; 64]; 32],
+        };
         let regs: Chip8Regs = Chip8Regs {
             index_reg: 0,
             pc: 200,
@@ -123,7 +127,7 @@ impl Chip8Core {
             stack: VecDeque::new(),
             keys: [0; 16],
             cosmac: cosmac_compat,
-            ga: ga
+            ga: ga,
         }
     }
 
@@ -149,17 +153,17 @@ impl Chip8Core {
         let y = (y % (self._disp._display.len() as u8)) as usize;
 
         let mut collision: bool = false;
-        for row in 0 .. height {
+        for row in 0..height {
             let offset: usize = self.regs.index_reg as usize + row as usize;
             let val: u8 = self.mem.memspace[offset];
-            let hots: BitVec::<Msb0, u8> = BitVec::<Msb0, u8>::from_element(val);
+            let hots: BitVec<Msb0, u8> = BitVec::<Msb0, u8>::from_element(val);
             debug!("BV: {:?} val: {:X} offset: {}", row, val, offset);
             for (col_offset, b) in hots.into_iter().enumerate() {
                 let col_val: usize = x + col_offset;
                 let row_val: usize = y + (row as usize);
                 if row_val < self._disp._display.len() {
                     let active_row = &mut self._disp._display[row_val];
-                    if col_val < active_row.len(){
+                    if col_val < active_row.len() {
                         if active_row[col_val] == 1 {
                             collision = true;
                         }
@@ -167,19 +171,19 @@ impl Chip8Core {
                             active_row[col_val] ^= 1;
                         }
                     }
-                    
                 }
             }
         }
         if collision {
             self.set_reg(0xF, 1)?;
-        }
-        else {
+        } else {
             self.set_reg(0xF, 0)?;
         }
         match self.ga.display_state_sender.send(self._disp.clone()) {
             Ok(_) => {}
-            Err(e) => {error!("ERR: {} ", e);}
+            Err(e) => {
+                error!("ERR: {} ", e);
+            }
         }
 
         Ok(())
@@ -470,8 +474,8 @@ impl Chip8Core {
                     let tens: u8 = (val - hunds) / 10;
                     let ones: u8 = val - (hunds + tens);
                     self.mem.memspace[origin] = hunds;
-                    self.mem.memspace[origin+1] = tens;
-                    self.mem.memspace[origin+2] = ones;
+                    self.mem.memspace[origin + 1] = tens;
+                    self.mem.memspace[origin + 2] = ones;
                     Ok(())
                 }
                 Chip8ExtraInstr::SaveRegRange(args) => {
@@ -506,7 +510,9 @@ impl Chip8Core {
         };
         mem.memspace[0..80].copy_from_slice(&DEFAULT_FONT_MEM[..]);
         let timers: Chip8Timers = Chip8Timers { delay: 0, sound: 0 };
-        let disp: Chip8DisplayData = Chip8DisplayData{_display: [[0;64]; 32]};
+        let disp: Chip8DisplayData = Chip8DisplayData {
+            _display: [[0; 64]; 32],
+        };
         let regs: Chip8Regs = Chip8Regs {
             index_reg: 0,
             pc: 200,
@@ -521,7 +527,7 @@ impl Chip8Core {
             stack: VecDeque::new(),
             keys: [0; 16],
             cosmac: true,
-            ga: GraphicsAdapter::new()
+            ga: GraphicsAdapter::new(),
         }
     }
 }
