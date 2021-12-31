@@ -2,16 +2,16 @@
 mod tests {
 
     use crate::core::*;
-    fn test_init() -> Chip8 {
+    fn test_init() -> Chip8Core {
         let _ = env_logger::builder()
             .filter_level(log::LevelFilter::Debug)
             .is_test(true)
             .try_init();
 
-        Chip8::test_core()
+        Chip8Core::test_core()
     }
 
-    fn test_exec(chip8: &mut Chip8, instr: Chip8Instr) {
+    fn test_exec(chip8: &mut Chip8Core, instr: Chip8Instr) {
         match chip8.execute(instr) {
             Ok(_) => {}
             Err(e) => {

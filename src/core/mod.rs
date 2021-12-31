@@ -6,6 +6,7 @@ use log::{debug, error, info};
 use rand::random;
 use simple_error::{simple_error, SimpleError};
 use std::collections::VecDeque;
+use std::fmt::Display;
 use std::{fs, io::Read};
 use bitvec::prelude::*;
 
@@ -45,11 +46,34 @@ pub struct Chip8Mem {
     memspace: [u8; 4096],
 }
 
+#[derive(Clone, Copy)]
 pub struct Chip8DisplayData {
     _display: [[u8; 64]; 32],
 }
 
-pub struct Chip8 {
+impl Default for Chip8DisplayData {
+    fn default() -> Self {
+        Self { _display: [[0; 64]; 32] }
+    }
+}
+
+impl Display for Chip8DisplayData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for r in self._display.into_iter() {
+            let mut row_str: String = String::new();
+            for c in r.into_iter() {
+                match c {
+                    0 => row_str.push(' '),
+                    _ => row_str.push('■')
+                }
+            }
+            write!(f,"{}\n",row_str)?;
+        }
+        Ok(())
+    }
+}
+
+pub struct Chip8Core {
     regs: Chip8Regs,
     timers: Chip8Timers,
     _disp: Chip8DisplayData,
@@ -59,8 +83,8 @@ pub struct Chip8 {
     cosmac: bool,
 }
 
-impl Chip8 {
-    pub fn new(prog_path: &str, cosmac_compat: bool) -> Chip8 {
+impl Chip8Core {
+    pub fn new(prog_path: &str, cosmac_compat: bool) -> Chip8Core {
         info!("Generating Chip8 Core from fname {}", prog_path);
         let mut mem: Chip8Mem = Chip8Mem {
             memspace: [0; 4096],
@@ -88,7 +112,7 @@ impl Chip8 {
 
         mem.memspace[200..].copy_from_slice(&prog_vec[..4096]);
 
-        Chip8 {
+        Chip8Core {
             regs: regs,
             timers: timers,
             _disp: disp,
@@ -154,16 +178,7 @@ impl Chip8 {
     }
 
     pub fn dbg_display(&self) {
-        for r in self._disp._display.into_iter() {
-            let mut row_str: String = String::new();
-            for c in r.into_iter() {
-                match c {
-                    0 => row_str.push(' '),
-                    _ => row_str.push('■')
-                }
-            }
-            println!("{}",row_str);
-        }
+        print!("{}", self._disp);
     }
 
     fn pop(&mut self) -> Result<u16, SimpleError> {
@@ -476,7 +491,7 @@ impl Chip8 {
     }
 
     #[cfg(test)]
-    fn test_core() -> Chip8 {
+    fn test_core() -> Chip8Core {
         info!("Generating test core");
         let mut mem: Chip8Mem = Chip8Mem {
             memspace: [0; 4096],
@@ -490,7 +505,7 @@ impl Chip8 {
             v_regs: [0; 16],
         };
 
-        Chip8 {
+        Chip8Core {
             regs: regs,
             timers: timers,
             _disp: disp,
