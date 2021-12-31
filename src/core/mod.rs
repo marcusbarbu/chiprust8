@@ -482,8 +482,8 @@ impl Chip8Core {
                     let val: u8 = self.get_reg(args.reg)?;
                     let origin: usize = self.regs.index_reg as usize;
                     let hunds = val / 100;
-                    let tens: u8 = (val - hunds) / 10;
-                    let ones: u8 = val - (hunds + tens);
+                    let tens: u8 = val % 100;
+                    let ones: u8 = val % 10;
                     self.mem.memspace[origin] = hunds;
                     self.mem.memspace[origin + 1] = tens;
                     self.mem.memspace[origin + 2] = ones;
@@ -492,7 +492,7 @@ impl Chip8Core {
                 Chip8ExtraInstr::SaveRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
                     let end: u8 = self.get_reg(args.reg)?;
-                    for i in 0..end {
+                    for i in 0..end+1 {
                         let val: u8 = self.get_reg(i)?;
                         self.mem.memspace[addr as usize] = val;
                         addr += 1
@@ -502,7 +502,7 @@ impl Chip8Core {
                 Chip8ExtraInstr::LoadRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
                     let end: u8 = self.get_reg(args.reg)?;
-                    for i in 0..end {
+                    for i in 0..end+1 {
                         let val: u8 = self.mem.memspace[addr as usize];
                         self.set_reg(i, val)?;
                         addr += 1
