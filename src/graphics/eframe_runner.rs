@@ -40,11 +40,7 @@ impl Chip8EframeApp {
 impl epi::App for Chip8EframeApp {
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &epi::Frame) {
         // println!("update!");
-        if self.check_for_updates() {
-            println!("NEW DATA!");
-        } else {
-            // println!("No data");
-        }
+        let _ = self.check_for_updates();
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Hello world!");

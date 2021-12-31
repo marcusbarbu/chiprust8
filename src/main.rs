@@ -2,7 +2,7 @@ use chiprust8::{graphics, core::Chip8Core};
 
 fn main() {
     let _ = env_logger::builder()
-        .filter_level(log::LevelFilter::Debug)
+        .filter_level(log::LevelFilter::Info)
         .is_test(true)
         .try_init();
     let adapter = graphics::graphics_adapter::GraphicsAdapter::default();

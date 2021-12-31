@@ -189,7 +189,6 @@ impl Chip8Core {
         } else {
             self.set_reg(0xF, 0)?;
         }
-        self.dbg_display();
         match self.ga.display_state_sender.send(self._disp.clone()) {
             Ok(_) => {}
             Err(e) => {
@@ -261,7 +260,9 @@ impl Chip8Core {
             Chip8Instr::SkipImmEq(args) => {
                 let a: u8 = self.get_reg(args.reg)?;
                 let b: u8 = args.imm;
+                debug!("{} {}", a, b);
                 if a == b {
+                    debug!("Skipping bc {} == {}", a, b);
                     self.regs.pc += 2;
                 }
                 Ok(())
@@ -270,6 +271,7 @@ impl Chip8Core {
                 let a: u8 = self.get_reg(args.reg)?;
                 let b: u8 = args.imm;
                 if a != b {
+                    debug!("Skipping {} != {}", a, b);
                     self.regs.pc += 2;
                 }
                 Ok(())
@@ -279,6 +281,7 @@ impl Chip8Core {
                 let b: u8 = self.get_reg(args.b)?;
 
                 if a == b {
+                    debug!("Skipping {} == {}", a, b);
                     self.regs.pc += 2;
                 }
 
@@ -392,6 +395,7 @@ impl Chip8Core {
                 let a: u8 = self.get_reg(args.a)?;
                 let b: u8 = self.get_reg(args.b)?;
                 if a != b {
+                    debug!("Skipping bc {} != {}", a, b);
                     self.regs.pc += 2;
                 }
                 Ok(())
@@ -482,29 +486,33 @@ impl Chip8Core {
                     let val: u8 = self.get_reg(args.reg)?;
                     let origin: usize = self.regs.index_reg as usize;
                     let hunds = val / 100;
-                    let tens: u8 = val % 100;
+                    let tens: u8 = (val % 100) / 10;
                     let ones: u8 = val % 10;
                     self.mem.memspace[origin] = hunds;
                     self.mem.memspace[origin + 1] = tens;
                     self.mem.memspace[origin + 2] = ones;
+
+                    debug!("BCD of {} is {} {} {}", val, hunds, tens, ones);
                     Ok(())
                 }
                 Chip8ExtraInstr::SaveRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
-                    let end: u8 = self.get_reg(args.reg)?;
+                    let end: u8 = args.reg;
                     for i in 0..end+1 {
                         let val: u8 = self.get_reg(i)?;
                         self.mem.memspace[addr as usize] = val;
+                        debug!("Saving {} from reg {} to {}", val, i, addr);
                         addr += 1
                     }
                     Ok(())
                 }
                 Chip8ExtraInstr::LoadRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
-                    let end: u8 = self.get_reg(args.reg)?;
+                    let end: u8 = args.reg;
                     for i in 0..end+1 {
                         let val: u8 = self.mem.memspace[addr as usize];
                         self.set_reg(i, val)?;
+                        debug!("Loading {} to reg {} from {}", val, i, addr);
                         addr += 1
                     }
                     Ok(())
