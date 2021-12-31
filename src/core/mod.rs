@@ -10,6 +10,8 @@ use std::fmt::Display;
 use std::{fs, io::Read};
 use bitvec::prelude::*;
 
+use crate::graphics::graphics_adapter::GraphicsAdapter;
+
 pub const PROGRAM_OFFSET: u16 = 0x200;
 
 // credit to https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
@@ -81,10 +83,11 @@ pub struct Chip8Core {
     stack: VecDeque<u16>,
     keys: [u8; 16],
     cosmac: bool,
+    ga: GraphicsAdapter,
 }
 
 impl Chip8Core {
-    pub fn new(prog_path: &str, cosmac_compat: bool) -> Chip8Core {
+    pub fn new(prog_path: &str, cosmac_compat: bool, ga: GraphicsAdapter) -> Chip8Core {
         info!("Generating Chip8 Core from fname {}", prog_path);
         let mut mem: Chip8Mem = Chip8Mem {
             memspace: [0; 4096],
@@ -120,6 +123,7 @@ impl Chip8Core {
             stack: VecDeque::new(),
             keys: [0; 16],
             cosmac: cosmac_compat,
+            ga: ga
         }
     }
 
@@ -172,6 +176,10 @@ impl Chip8Core {
         }
         else {
             self.set_reg(0xF, 0)?;
+        }
+        match self.ga.display_state_sender.send(self._disp.clone()) {
+            Ok(_) => {}
+            Err(e) => {error!("ERR: {} ", e);}
         }
 
         Ok(())
@@ -513,6 +521,7 @@ impl Chip8Core {
             stack: VecDeque::new(),
             keys: [0; 16],
             cosmac: true,
+            ga: GraphicsAdapter::new()
         }
     }
 }
