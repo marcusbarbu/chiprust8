@@ -1,7 +1,7 @@
 mod instrs;
 mod tests;
 use bitvec::prelude::*;
-use byteorder::{BigEndian, ByteOrder};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use instrs::*;
 use log::{debug, error, info};
 use rand::random;
@@ -89,7 +89,7 @@ pub struct Chip8Core {
 }
 
 impl Chip8Core {
-    pub fn new(prog_path: &str, cosmac_compat: bool, ga: GraphicsAdapter) -> Chip8Core {
+    pub fn new(prog_path: &str, cosmac_compat: bool, ga: &GraphicsAdapter) -> Chip8Core {
         info!("Generating Chip8 Core from fname {}", prog_path);
         let mut mem: Chip8Mem = Chip8Mem {
             memspace: [0; 4096],
@@ -101,7 +101,7 @@ impl Chip8Core {
         };
         let regs: Chip8Regs = Chip8Regs {
             index_reg: 0,
-            pc: 200,
+            pc: 0x200,
             v_regs: [0; 16],
         };
 
@@ -117,7 +117,11 @@ impl Chip8Core {
             Err(_) => error!("Failed to read file in."),
         };
 
-        mem.memspace[200..].copy_from_slice(&prog_vec[..4096]);
+        while prog_vec.len() < (4096 - 0x200) {
+            prog_vec.push(0);
+        }
+
+        mem.memspace[0x200..].copy_from_slice(&prog_vec[..]);
 
         Chip8Core {
             regs: regs,
@@ -127,10 +131,16 @@ impl Chip8Core {
             stack: VecDeque::new(),
             keys: [0; 16],
             cosmac: cosmac_compat,
-            ga: ga,
+            ga: ga.clone(),
         }
     }
 
+    pub fn run_loop(&mut self) {
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(15));
+            self.tick();
+        }
+    }
     pub fn tick(&mut self) -> Result<(), SimpleError> {
         let instr: Chip8Instr = self.fetch_decode()?;
         self.execute(instr)?;
@@ -139,7 +149,7 @@ impl Chip8Core {
 
     fn fetch_decode(&mut self) -> Result<Chip8Instr, SimpleError> {
         let fetch_addr: usize = self.regs.pc as usize;
-        let instr: u16 = BigEndian::read_u16(&self.mem.memspace[fetch_addr..fetch_addr + 1]);
+        let instr: u16 = BigEndian::read_u16(&self.mem.memspace[fetch_addr..fetch_addr + 2]);
         return Chip8Instr::from_u16(instr);
     }
 
@@ -179,6 +189,7 @@ impl Chip8Core {
         } else {
             self.set_reg(0xF, 0)?;
         }
+        self.dbg_display();
         match self.ga.display_state_sender.send(self._disp.clone()) {
             Ok(_) => {}
             Err(e) => {

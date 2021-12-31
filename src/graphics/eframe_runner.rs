@@ -12,13 +12,13 @@ pub struct Chip8EframeApp {
 }
 
 impl Chip8EframeApp {
-    pub fn new(adapter: GraphicsAdapter) -> Chip8EframeApp {
+    pub fn new(adapter: &GraphicsAdapter) -> Chip8EframeApp {
         println!("Generating eframe app!");
         Chip8EframeApp {
             fname: String::from(""),
             display_data: Chip8DisplayData::default(),
             frame: None,
-            adapter: adapter,
+            adapter: adapter.clone(),
         }
     }
 
@@ -39,17 +39,18 @@ impl Chip8EframeApp {
 
 impl epi::App for Chip8EframeApp {
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &epi::Frame) {
-        println!("update!");
+        // println!("update!");
         if self.check_for_updates() {
             println!("NEW DATA!");
         } else {
-            println!("No data");
+            // println!("No data");
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Hello world!");
                 ui.label(self.fname.as_str());
-                ui.label(format!("{}", self.display_data));
+                // ui.label(format!("{}", self.display_data)).unwrap().monospace();
+                ui.label(egui::RichText::new(format!("{}", self.display_data)).monospace());
             })
         });
     }
@@ -69,7 +70,7 @@ impl epi::App for Chip8EframeApp {
         let bf: Box<epi::Frame> = Box::new(_frame.clone());
         std::thread::spawn(move || loop {
             bf.request_repaint();
-            println!("From that thread");
+            // println!("From that thread");
             std::thread::sleep(std::time::Duration::from_millis(10));
         });
     }
