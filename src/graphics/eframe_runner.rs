@@ -1,7 +1,6 @@
-use std::sync::Arc;
 
 use crate::{core::Chip8DisplayData, graphics::graphics_adapter::GraphicsAdapter};
-use eframe::{egui, epi};
+use eframe::{egui::{self, Widget}, epi};
 use log::error;
 
 pub struct Chip8EframeApp {
@@ -10,6 +9,23 @@ pub struct Chip8EframeApp {
     frame: Option<epi::Frame>,
     adapter: GraphicsAdapter,
 }
+
+struct Chip8EframeDisplayData {
+    dd: Chip8DisplayData,
+    width_sim_pixels: usize,
+    height_sim_pixels: usize,
+    sim_pixel_dim: (f32, f32),
+}
+
+// impl Default for Chip8EframeDisplayData {
+//     fn default() -> Self {
+//         let dd = Chip8EframeDisplayData::default();
+//         let w: usize = dd.dis[0].len();
+//         let h: usize = dd.len();
+
+//         Self { dd: Default::default(), width_sim_pixels: dd[0].len(), height_sim_pixels: Default::default(), sim_pixel_dim: Default::default() }
+//     }
+// }
 
 impl Chip8EframeApp {
     pub fn new(adapter: &GraphicsAdapter) -> Chip8EframeApp {
@@ -45,10 +61,17 @@ impl epi::App for Chip8EframeApp {
             ui.horizontal(|ui| {
                 ui.label("Hello world!");
                 ui.label(self.fname.as_str());
-                // ui.label(format!("{}", self.display_data)).unwrap().monospace();
                 ui.label(egui::RichText::new(format!("{}", self.display_data)).monospace());
+                for k in &ctx.input().keys_down {
+                    ui.label(format!("Key {:?} down", k));
+                }
             })
         });
+
+        if ctx.input().key_pressed(egui::Key::Q) {
+            _frame.quit();
+        }
+
     }
 
     fn name(&self) -> &str {

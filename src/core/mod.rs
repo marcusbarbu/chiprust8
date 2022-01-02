@@ -86,6 +86,7 @@ pub struct Chip8Core {
     keys: [u8; 16],
     cosmac: bool,
     ga: GraphicsAdapter,
+    running: bool,
 }
 
 impl Chip8Core {
@@ -132,13 +133,25 @@ impl Chip8Core {
             keys: [0; 16],
             cosmac: cosmac_compat,
             ga: ga.clone(),
+            running: true
         }
     }
 
     pub fn run_loop(&mut self) {
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(15));
-            self.tick();
+            std::thread::sleep(std::time::Duration::from_micros(10));
+            while !self.ga.key_state_receiver.is_empty(){
+                match self.ga.key_state_receiver.recv_timeout(std::time::Duration::from_micros(1)) {
+                    Ok(k) => { self.keys = k; }
+                    Err(_) => {}
+                };
+            }
+            if self.running {
+                match self.tick(){
+                    Ok(_) => {}
+                    Err(e) => {error!("Failed to tick with err {}", e);}
+                };
+            }
         }
     }
     pub fn tick(&mut self) -> Result<(), SimpleError> {
@@ -498,7 +511,7 @@ impl Chip8Core {
                 Chip8ExtraInstr::SaveRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
                     let end: u8 = args.reg;
-                    for i in 0..end+1 {
+                    for i in 0..end + 1 {
                         let val: u8 = self.get_reg(i)?;
                         self.mem.memspace[addr as usize] = val;
                         debug!("Saving {} from reg {} to {}", val, i, addr);
@@ -509,7 +522,7 @@ impl Chip8Core {
                 Chip8ExtraInstr::LoadRegRange(args) => {
                     let mut addr: u16 = self.regs.index_reg;
                     let end: u8 = args.reg;
-                    for i in 0..end+1 {
+                    for i in 0..end + 1 {
                         let val: u8 = self.mem.memspace[addr as usize];
                         self.set_reg(i, val)?;
                         debug!("Loading {} to reg {} from {}", val, i, addr);
@@ -547,6 +560,7 @@ impl Chip8Core {
             keys: [0; 16],
             cosmac: true,
             ga: GraphicsAdapter::new(),
+            running: true
         }
     }
 }

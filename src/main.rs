@@ -1,18 +1,33 @@
-use chiprust8::{graphics, core::Chip8Core};
+use chiprust8::{core::Chip8Core, graphics};
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[clap(about, version, author)]
+struct Chip8LauncherArgs {
+    #[clap(short, long, default_value_t=String::from("testfile"))]
+    fname: String,
+    #[clap(short, long)]
+    no_eframe: bool
+}
+
 
 fn main() {
+    let args = Chip8LauncherArgs::parse();
     let _ = env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .is_test(true)
         .try_init();
+
     let adapter = graphics::graphics_adapter::GraphicsAdapter::default();
-    let app = graphics::eframe_runner::Chip8EframeApp::new(&adapter);
-    let native_options = eframe::NativeOptions::default();
-    let mut core: Chip8Core = Chip8Core::new("testfile", true, &adapter);
+    let mut core: Chip8Core = Chip8Core::new(&args.fname, true, &adapter);
 
     std::thread::spawn(move || {
         core.run_loop();
     });
 
-    eframe::run_native(Box::new(app), native_options);
+    if !args.no_eframe {
+        let app = graphics::eframe_runner::Chip8EframeApp::new(&adapter);
+        let native_options = eframe::NativeOptions::default();
+        eframe::run_native(Box::new(app), native_options);
+    }
 }

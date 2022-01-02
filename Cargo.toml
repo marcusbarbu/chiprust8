@@ -16,3 +16,4 @@ simple_logger = "1.16.0"
 bitvec = "0.22.3"
 crossbeam = "0.8.1"
 eframe = "0.16.0" # Gives us egui, epi and web+native backends
+clap = { version = "3.0.0", features = ["derive"] }
