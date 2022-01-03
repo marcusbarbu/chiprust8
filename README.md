@@ -10,6 +10,9 @@ fan favorite for learning to write VMs and interpreters.  This is yet another CH
 I had a week off work between Christmas and New Year and wanted to see how far I could get.  I also wanted to flex some
 Rust muscles on something a little more substantive than puzzles.
 
+
+![Screenshot of running the chip8-test-rom on ChipRust8](imgs/test_rom_run.png)
+
 ## Technical
 
 ### Running It:
