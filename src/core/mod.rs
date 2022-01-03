@@ -139,10 +139,10 @@ impl Chip8Core {
 
     pub fn run_loop(&mut self) {
         loop {
-            std::thread::sleep(std::time::Duration::from_micros(10));
+            std::thread::sleep(std::time::Duration::from_micros(1));
             while !self.ga.key_state_receiver.is_empty(){
                 match self.ga.key_state_receiver.recv_timeout(std::time::Duration::from_micros(1)) {
-                    Ok(k) => { self.keys = k; }
+                    Ok(k) => { self.keys = k; debug!("Got new keys {:?}", k);}
                     Err(_) => {}
                 };
             }

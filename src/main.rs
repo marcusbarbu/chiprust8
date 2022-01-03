@@ -7,14 +7,20 @@ struct Chip8LauncherArgs {
     #[clap(short, long, default_value_t=String::from("testfile"))]
     fname: String,
     #[clap(short, long)]
-    no_eframe: bool
+    no_eframe: bool,
+    #[clap(short, long)]
+    verbose: bool
 }
 
 
 fn main() {
     let args = Chip8LauncherArgs::parse();
+    let log_level: log::LevelFilter = match args.verbose{
+        true => log::LevelFilter::Debug,
+        false => log::LevelFilter::Info
+    };
     let _ = env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log_level)
         .is_test(true)
         .try_init();
 

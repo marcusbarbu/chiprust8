@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use crate::core::Chip8DisplayData;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 

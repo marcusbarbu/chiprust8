@@ -1,13 +1,14 @@
-
-use crate::{core::Chip8DisplayData, graphics::graphics_adapter::GraphicsAdapter};
+use crate::{core::Chip8DisplayData, graphics::graphics_adapter::GraphicsAdapter, graphics::key_mapping::*};
 use eframe::{egui::{self, Widget}, epi};
-use log::error;
+use log::{error, info};
+
 
 pub struct Chip8EframeApp {
     fname: String,
     pub display_data: Chip8DisplayData,
     frame: Option<epi::Frame>,
     adapter: GraphicsAdapter,
+    last_key_state: [u8;16],
 }
 
 struct Chip8EframeDisplayData {
@@ -35,6 +36,7 @@ impl Chip8EframeApp {
             display_data: Chip8DisplayData::default(),
             frame: None,
             adapter: adapter.clone(),
+            last_key_state: [0;16],
         }
     }
 
@@ -68,9 +70,35 @@ impl epi::App for Chip8EframeApp {
             })
         });
 
-        if ctx.input().key_pressed(egui::Key::Q) {
+        if ctx.input().key_pressed(egui::Key::Space) {
             _frame.quit();
         }
+
+        let mut new_keys: [u8; 16] = [0; 16];
+        let mut new_state: bool = false;
+
+        for (i, k ) in KEY_MAP.iter().enumerate() {
+            if ctx.input().key_pressed(*k) {
+                new_keys[i] = 1;
+                new_state = true;
+                info!("Key {:?} pressed", k);
+            }
+            else if ctx.input().key_down(*k) {
+                new_keys[i] = 1;
+                info!("Key {:?} held", k);
+            }
+            else if ctx.input().key_released(*k) {
+                new_keys[i] = 0;
+                info!("Key {:?} released", k);
+                new_state = true;
+            }
+        }
+
+        if new_state || self.last_key_state != new_keys {
+            self.last_key_state = new_keys;
+            self.adapter.key_state_sender.send_timeout(new_keys, std::time::Duration::from_micros(1)).unwrap();
+        }
+
 
     }
 
