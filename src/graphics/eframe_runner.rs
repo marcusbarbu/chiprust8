@@ -1,23 +1,26 @@
-use crate::{core::Chip8DisplayData, graphics::graphics_adapter::GraphicsAdapter, graphics::key_mapping::*};
-use eframe::{egui::{self, Widget}, epi};
-use log::{error, info};
-
+use crate::{
+    core::Chip8DisplayData, graphics::graphics_adapter::GraphicsAdapter, graphics::key_mapping::*,
+};
+use eframe::{
+    egui::{self},
+    epi,
+};
+use log::info;
 
 pub struct Chip8EframeApp {
     fname: String,
     pub display_data: Chip8DisplayData,
     frame: Option<epi::Frame>,
     adapter: GraphicsAdapter,
-    last_key_state: [u8;16],
+    last_key_state: [u8; 16],
 }
 
-struct Chip8EframeDisplayData {
-    dd: Chip8DisplayData,
-    width_sim_pixels: usize,
-    height_sim_pixels: usize,
-    sim_pixel_dim: (f32, f32),
-}
-
+// struct Chip8EframeDisplayData {
+//     dd: Chip8DisplayData,
+//     width_sim_pixels: usize,
+//     height_sim_pixels: usize,
+//     sim_pixel_dim: (f32, f32),
+// }
 // impl Default for Chip8EframeDisplayData {
 //     fn default() -> Self {
 //         let dd = Chip8EframeDisplayData::default();
@@ -36,7 +39,7 @@ impl Chip8EframeApp {
             display_data: Chip8DisplayData::default(),
             frame: None,
             adapter: adapter.clone(),
-            last_key_state: [0;16],
+            last_key_state: [0; 16],
         }
     }
 
@@ -77,17 +80,15 @@ impl epi::App for Chip8EframeApp {
         let mut new_keys: [u8; 16] = [0; 16];
         let mut new_state: bool = false;
 
-        for (i, k ) in KEY_MAP.iter().enumerate() {
+        for (i, k) in KEY_MAP.iter().enumerate() {
             if ctx.input().key_pressed(*k) {
                 new_keys[i] = 1;
                 new_state = true;
                 info!("Key {:?} pressed", k);
-            }
-            else if ctx.input().key_down(*k) {
+            } else if ctx.input().key_down(*k) {
                 new_keys[i] = 1;
                 info!("Key {:?} held", k);
-            }
-            else if ctx.input().key_released(*k) {
+            } else if ctx.input().key_released(*k) {
                 new_keys[i] = 0;
                 info!("Key {:?} released", k);
                 new_state = true;
@@ -96,10 +97,11 @@ impl epi::App for Chip8EframeApp {
 
         if new_state || self.last_key_state != new_keys {
             self.last_key_state = new_keys;
-            self.adapter.key_state_sender.send_timeout(new_keys, std::time::Duration::from_micros(1)).unwrap();
+            self.adapter
+                .key_state_sender
+                .send_timeout(new_keys, std::time::Duration::from_micros(1))
+                .unwrap();
         }
-
-
     }
 
     fn name(&self) -> &str {

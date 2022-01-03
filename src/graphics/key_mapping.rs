@@ -1,6 +1,5 @@
 use eframe::egui::*;
 
-
 pub const KEY_MAP: [eframe::egui::Key; 16] = [
     Key::Num1,
     Key::Num2,

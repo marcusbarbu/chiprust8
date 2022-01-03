@@ -9,15 +9,14 @@ struct Chip8LauncherArgs {
     #[clap(short, long)]
     no_eframe: bool,
     #[clap(short, long)]
-    verbose: bool
+    verbose: bool,
 }
-
 
 fn main() {
     let args = Chip8LauncherArgs::parse();
-    let log_level: log::LevelFilter = match args.verbose{
+    let log_level: log::LevelFilter = match args.verbose {
         true => log::LevelFilter::Debug,
-        false => log::LevelFilter::Info
+        false => log::LevelFilter::Info,
     };
     let _ = env_logger::builder()
         .filter_level(log_level)

@@ -1,7 +1,7 @@
 mod instrs;
 mod tests;
 use bitvec::prelude::*;
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use byteorder::{BigEndian, ByteOrder};
 use instrs::*;
 use log::{debug, error, info};
 use rand::random;
@@ -71,7 +71,7 @@ impl Display for Chip8DisplayData {
                     _ => row_str.push('■'),
                 }
             }
-            write!(f, "{}\n", row_str)?;
+            writeln!(f, "{}", row_str)?;
         }
         Ok(())
     }
@@ -125,31 +125,37 @@ impl Chip8Core {
         mem.memspace[0x200..].copy_from_slice(&prog_vec[..]);
 
         Chip8Core {
-            regs: regs,
-            timers: timers,
+            regs,
+            timers,
             _disp: disp,
-            mem: mem,
+            mem,
             stack: VecDeque::new(),
             keys: [0; 16],
             cosmac: cosmac_compat,
             ga: ga.clone(),
-            running: true
+            running: true,
         }
     }
 
     pub fn run_loop(&mut self) {
         loop {
             std::thread::sleep(std::time::Duration::from_micros(1));
-            while !self.ga.key_state_receiver.is_empty(){
-                match self.ga.key_state_receiver.recv_timeout(std::time::Duration::from_micros(1)) {
-                    Ok(k) => { self.keys = k; debug!("Got new keys {:?}", k);}
-                    Err(_) => {}
-                };
+            while !self.ga.key_state_receiver.is_empty() {
+                if let Ok(k) = self
+                    .ga
+                    .key_state_receiver
+                    .recv_timeout(std::time::Duration::from_micros(1))
+                {
+                    self.keys = k;
+                    debug!("Got new keys {:?}", k);
+                }
             }
             if self.running {
-                match self.tick(){
+                match self.tick() {
                     Ok(_) => {}
-                    Err(e) => {error!("Failed to tick with err {}", e);}
+                    Err(e) => {
+                        error!("Failed to tick with err {}", e);
+                    }
                 };
             }
         }
@@ -163,7 +169,7 @@ impl Chip8Core {
     fn fetch_decode(&mut self) -> Result<Chip8Instr, SimpleError> {
         let fetch_addr: usize = self.regs.pc as usize;
         let instr: u16 = BigEndian::read_u16(&self.mem.memspace[fetch_addr..fetch_addr + 2]);
-        return Chip8Instr::from_u16(instr);
+        Chip8Instr::from_u16(instr)
     }
 
     fn clear_display(&mut self) -> Result<(), SimpleError> {
@@ -202,7 +208,7 @@ impl Chip8Core {
         } else {
             self.set_reg(0xF, 0)?;
         }
-        match self.ga.display_state_sender.send(self._disp.clone()) {
+        match self.ga.display_state_sender.send(self._disp) {
             Ok(_) => {}
             Err(e) => {
                 error!("ERR: {} ", e);
@@ -395,7 +401,7 @@ impl Chip8Core {
                     } else {
                         target = a;
                     }
-                    if target & 0x80 == 1 {
+                    if target & 0x80 == 0x80 {
                         self.set_reg(0xF, 1)?;
                     } else {
                         self.set_reg(0xF, 0)?;
@@ -560,7 +566,7 @@ impl Chip8Core {
             keys: [0; 16],
             cosmac: true,
             ga: GraphicsAdapter::new(),
-            running: true
+            running: true,
         }
     }
 }
